@@ -1,38 +1,34 @@
 import { getCurrentPosition } from "@tauri-apps/plugin-geolocation";
 import type { Gps, TerminalInfo } from "./types";
+import { getAmapPosition } from "./amap";
+
+const PRIMARY_TIMEOUT_MS = 5000;
 
 export async function getCurrentGps(timeoutMs: number): Promise<Gps> {
   try {
-    // 尝试使用 Tauri 插件获取 GPS
+    // 优先走系统定位，5 秒超时后切高德定位
     const position = await getCurrentPosition({
       enableHighAccuracy: true,
-      timeout: timeoutMs,
+      timeout: Math.min(timeoutMs, PRIMARY_TIMEOUT_MS),
       maximumAge: 0,
     });
-    
+
     return {
       lat: position.coords.latitude,
       lng: position.coords.longitude,
     };
   } catch (error) {
     console.error("Failed to get GPS from Tauri plugin:", error);
-    
-    // 回退到浏览器 API
-    if (!("geolocation" in navigator)) {
-      console.warn("Geolocation not available");
+    try {
+      const position = await getAmapPosition(timeoutMs);
+      return {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      };
+    } catch (amapError) {
+      console.error("Amap geolocation error:", amapError);
       return null;
     }
-    
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        (err) => {
-          console.error("Browser geolocation error:", err);
-          resolve(null);
-        },
-        { enableHighAccuracy: true, timeout: timeoutMs },
-      );
-    });
   }
 }
 

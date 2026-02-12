@@ -3,13 +3,12 @@ import "./App.css";
 import MapView from "./components/MapView";
 import { buildTerminalInfo, getCurrentGps } from "./lib/device";
 import { emptyStore, fetchStore, saveStore } from "./lib/gitee";
-import { defaultSettings, loadCachedStore, loadOrCreateTerminalId, loadSettings, saveCachedStore, saveSettings } from "./lib/storage";
-import type { Gps, Settings, TerminalInfo, TerminalStatus, TerminalStore } from "./lib/types";
+import { defaultSettings, loadCachedStore, loadOrCreateTerminalId, loadSettings, saveCachedStore } from "./lib/storage";
+import type { Gps, TerminalInfo, TerminalStatus, TerminalStore } from "./lib/types";
 
 function App() {
   const terminalId = useMemo(() => loadOrCreateTerminalId(), []);
-  const [tab, setTab] = useState<"terminal" | "settings">("terminal");
-  const [settings, setSettings] = useState<Settings>(() => loadSettings());
+  const settings = useMemo(() => loadSettings(), []);
 
   const [store, setStore] = useState<TerminalStore>(() => loadCachedStore() ?? emptyStore());
   const [storeError, setStoreError] = useState<string | null>(null);
@@ -29,17 +28,6 @@ function App() {
     }),
     [settings.giteeAccessToken, settings.giteeGistId, settings.gistFileName],
   );
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      try {
-        saveSettings(settings);
-      } catch (e) {
-        console.error("Failed to save settings:", e);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [settings]);
 
   const now = Date.now();
   const computedTerminals = useMemo(() => {
@@ -155,18 +143,16 @@ function App() {
   }
 
   useEffect(() => {
-    if (tab !== "terminal") return;
     void pullStore();
     const t = window.setInterval(() => void pullStore(), settings.refreshSeconds * 1000);
     return () => window.clearInterval(t);
-  }, [tab, settings.refreshSeconds, giteeCfg.gistId, giteeCfg.fileName, giteeCfg.accessToken]);
+  }, [settings.refreshSeconds, giteeCfg.gistId, giteeCfg.fileName, giteeCfg.accessToken]);
 
   useEffect(() => {
-    if (tab !== "terminal") return;
     if (localStatus !== "online") return;
     const t = window.setInterval(() => void heartbeat(), 30000);
     return () => window.clearInterval(t);
-  }, [tab, localStatus, giteeCfg.gistId, giteeCfg.fileName, giteeCfg.accessToken, settings.appId, terminalId]);
+  }, [localStatus, giteeCfg.gistId, giteeCfg.fileName, giteeCfg.accessToken, settings.appId, terminalId]);
 
   return (
     <div className="app">
@@ -177,14 +163,6 @@ function App() {
             终端：<span className="mono">{terminalId}</span>
           </div> */}
         </div>
-        <nav className="tabs">
-          <button className={tab === "terminal" ? "tab active" : "tab"} onClick={() => setTab("terminal")}>
-            终端
-          </button>
-          <button className={tab === "settings" ? "tab active" : "tab"} onClick={() => setTab("settings")}>
-            设置
-          </button>
-        </nav>
       </header>
 
       <main className="content">
@@ -194,126 +172,7 @@ function App() {
           </div>
         )}
 
-        {tab === "settings" && (
-          <section className="grid">
-            <div className="card">
-              <h2>Gitee 存储</h2>
-              <label className="field">
-                <div className="label">Access Token</div>
-                <input
-                  value={settings.giteeAccessToken}
-                  onChange={(e) => {
-                    const value = e.currentTarget.value || "";
-                    setSettings((s) => ({ ...s, giteeAccessToken: value }));
-                  }}
-                  placeholder="Gitee access token"
-                />
-              </label>
-              <label className="field">
-                <div className="label">Gist ID</div>
-                <input
-                  value={settings.giteeGistId}
-                  onChange={(e) => {
-                    const value = e.currentTarget.value || "";
-                    setSettings((s) => ({ ...s, giteeGistId: value }));
-                  }}
-                  placeholder="Gitee gist id"
-                />
-              </label>
-              <label className="field">
-                <div className="label">JSON 文件名</div>
-                <input
-                  value={settings.gistFileName}
-                  onChange={(e) => {
-                    const value = e.currentTarget.value || "";
-                    setSettings((s) => ({ ...s, gistFileName: value }));
-                  }}
-                  placeholder="terminals.json"
-                />
-              </label>
-              <div className="row">
-                <button onClick={() => void pullStore()} disabled={storeLoading}>
-                  {storeLoading ? "连接中…" : "测试连接"}
-                </button>
-              </div>
-            </div>
-
-            <div className="card">
-              <h2>地图配置</h2>
-              <label className="field">
-                <div className="label">高德地图 API Key</div>
-                <input
-                  value={settings.amapKey}
-                  onChange={(e) => {
-                    const value = e.currentTarget.value || "";
-                    setSettings((s) => ({ ...s, amapKey: value }));
-                  }}
-                  placeholder="请输入高德地图 Web 端（JS API）Key"
-                />
-              </label>
-              <label className="field">
-                <div className="label">安全密钥（可选）</div>
-                <input
-                  value={settings.amapSecurityCode}
-                  onChange={(e) => {
-                    const value = e.currentTarget.value || "";
-                    setSettings((s) => ({ ...s, amapSecurityCode: value }));
-                  }}
-                  placeholder="如需使用安全密钥，请在此输入"
-                />
-              </label>
-              <div className="muted" style={{ marginTop: '-4px', fontSize: '12px', lineHeight: '1.5' }}>
-                访问 <a 
-                  href="https://console.amap.com/dev/key/app" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={{ color: '#2f6aff', textDecoration: 'underline' }}
-                >
-                  高德开放平台
-                </a> 申请 <b>Web 端（JS API）</b> 密钥。安全密钥为可选项，用于提高 API 调用安全性。
-              </div>
-            </div>
-
-            <div className="card">
-              <h2>策略</h2>
-              <label className="field">
-                <div className="label">App ID</div>
-                <input
-                  value={settings.appId}
-                  onChange={(e) => {
-                    const value = e.currentTarget.value || "";
-                    setSettings((s) => ({ ...s, appId: value }));
-                  }}
-                />
-              </label>
-              <label className="field">
-                <div className="label">看板刷新（秒）</div>
-                <input
-                  type="number"
-                  value={settings.refreshSeconds}
-                  onChange={(e) => {
-                    const val = Number(e.currentTarget.value);
-                    setSettings((s) => ({ ...s, refreshSeconds: Number.isNaN(val) ? s.refreshSeconds : val }));
-                  }}
-                />
-              </label>
-              <label className="field">
-                <div className="label">在线超时（分钟）</div>
-                <input
-                  type="number"
-                  value={settings.onlineTimeoutMinutes}
-                  onChange={(e) => {
-                    const val = Number(e.currentTarget.value);
-                    setSettings((s) => ({ ...s, onlineTimeoutMinutes: Number.isNaN(val) ? s.onlineTimeoutMinutes : val }));
-                  }}
-                />
-              </label>
-            </div>
-          </section>
-        )}
-
-        {tab === "terminal" && (
-          <section className="grid">
+        <section className="grid">
             <div className="card">
               <div className="row">
                 <button onClick={() => void join()} disabled={storeLoading || !settings.giteeAccessToken || !settings.giteeGistId}>
@@ -340,16 +199,6 @@ function App() {
                       <button onClick={() => void pullStore()} disabled={storeLoading}>
                         {storeLoading ? "刷新中…" : "手动刷新"}
                       </button>
-                    </div>
-                  </div>
-                  <div className="stats">
-                    <div className="stat">
-                      <div className="statNum">{onlineTerminals.length}</div>
-                      <div className="statLabel">在线</div>
-                    </div>
-                    <div className="stat">
-                      <div className="statNum">{computedTerminals.length}</div>
-                      <div className="statLabel">总数</div>
                     </div>
                   </div>
 
@@ -434,7 +283,6 @@ function App() {
               </>
             )}
           </section>
-        )}
 
       </main>
     </div>

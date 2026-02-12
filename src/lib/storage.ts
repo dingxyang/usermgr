@@ -1,6 +1,5 @@
 import type { Settings, TerminalStore } from "./types";
 
-const SETTINGS_KEY = "usermgr.settings.v1";
 const TERMINAL_ID_KEY = "usermgr.terminalId.v1";
 const STORE_CACHE_KEY = "usermgr.storeCache.v1";
 
@@ -16,28 +15,29 @@ export const defaultSettings: Settings = {
 };
 
 export function loadSettings(): Settings {
-  try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return defaultSettings;
-    const parsed = JSON.parse(raw) as Partial<Settings>;
-    return {
-      ...defaultSettings,
-      ...parsed,
-      refreshSeconds: clampNumber(parsed.refreshSeconds, 2, 3600, defaultSettings.refreshSeconds),
-      onlineTimeoutMinutes: clampNumber(
-        parsed.onlineTimeoutMinutes,
-        1,
-        60 * 24,
-        defaultSettings.onlineTimeoutMinutes,
-      ),
-    };
-  } catch {
-    return defaultSettings;
-  }
-}
-
-export function saveSettings(settings: Settings) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  const env = import.meta.env;
+  const refreshSeconds = clampNumber(
+    env.VITE_REFRESH_SECONDS ? Number(env.VITE_REFRESH_SECONDS) : NaN,
+    2,
+    3600,
+    defaultSettings.refreshSeconds,
+  );
+  const onlineTimeoutMinutes = clampNumber(
+    env.VITE_ONLINE_TIMEOUT_MINUTES ? Number(env.VITE_ONLINE_TIMEOUT_MINUTES) : NaN,
+    1,
+    60 * 24,
+    defaultSettings.onlineTimeoutMinutes,
+  );
+  return {
+    giteeAccessToken: env.VITE_GITEE_ACCESS_TOKEN ?? defaultSettings.giteeAccessToken,
+    giteeGistId: env.VITE_GITEE_GIST_ID ?? defaultSettings.giteeGistId,
+    gistFileName: env.VITE_GIST_FILE_NAME ?? defaultSettings.gistFileName,
+    appId: env.VITE_APP_ID ?? defaultSettings.appId,
+    refreshSeconds,
+    onlineTimeoutMinutes,
+    amapKey: env.VITE_AMAP_KEY ?? defaultSettings.amapKey,
+    amapSecurityCode: env.VITE_AMAP_SECURITY_CODE ?? defaultSettings.amapSecurityCode,
+  };
 }
 
 export function loadOrCreateTerminalId(): string {
