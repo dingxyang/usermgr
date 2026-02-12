@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import AMapLoader from "@amap/amap-jsapi-loader";
 import type { TerminalInfo } from "../lib/types";
+import markerIconUrl from "../assets/map-marker.svg";
 
 type Props = {
   terminals: TerminalInfo[];
@@ -70,7 +71,7 @@ export default function MapView({ terminals, amapKey, amapSecurityCode }: Props)
         mapRef.current = new AMap.Map(containerRef.current, {
           viewMode: "3D",
           zoom: 11,
-          center: [116.397428, 39.90923], // 默认中心点（北京）
+          center: [118.767413, 32.041544], // 默认中心点（南京）
           mapStyle: "amap://styles/normal",
         });
 
@@ -116,10 +117,17 @@ export default function MapView({ terminals, amapKey, amapSecurityCode }: Props)
 
     // 创建新标记
     const AMap = window.AMap;
+    const markerIcon = new AMap.Icon({
+      image: markerIconUrl,
+      size: new AMap.Size(32, 42),
+      imageSize: new AMap.Size(32, 42),
+    });
     const markers = points.map((p) => {
       const marker = new AMap.Marker({
         position: [p.lng, p.lat],
         title: p.t.terminal_name,
+        icon: markerIcon,
+        offset: new AMap.Pixel(-16, -42),
         map: mapRef.current,
       });
 

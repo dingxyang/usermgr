@@ -43,6 +43,9 @@ function App() {
     () => computedTerminals.filter((t) => t.computedOnline).map((t) => t.info),
     [computedTerminals],
   );
+  const onlineComputedTerminals = useMemo(() => computedTerminals.filter((t) => t.computedOnline), [computedTerminals]);
+  const hasTerminalData = computedTerminals.length > 0;
+  const mapTerminals = useMemo(() => onlineTerminals.filter((t) => t.gps), [onlineTerminals]);
 
   async function pullStore() {
     if (refreshInFlight.current) return;
@@ -190,14 +193,14 @@ function App() {
               </div>
             </div>
 
-            {computedTerminals.length > 0 && (
+            {hasTerminalData && (
               <>
                 <div className="card span2">
                   <div className="row spread">
                     <h2>在线终端</h2>
                     <div className="row">
                       <button onClick={() => void pullStore()} disabled={storeLoading}>
-                        {storeLoading ? "刷新中…" : "手动刷新"}
+                        {storeLoading ? "刷新中…" : "刷新"}
                       </button>
                     </div>
                   </div>
@@ -217,9 +220,8 @@ function App() {
                         </tr>
                       </thead>
                       <tbody>
-                        {computedTerminals
+                        {onlineComputedTerminals
                           .slice()
-                          .sort((a, b) => Number(b.computedOnline) - Number(a.computedOnline))
                           .map(({ info, computedOnline }) => (
                             <tr key={info.terminal_id}>
                               <td>{info.platform}</td>
@@ -239,9 +241,8 @@ function App() {
 
                   {/* 移动端卡片视图 */}
                   <div className="mobileCards">
-                    {computedTerminals
+                    {onlineComputedTerminals
                       .slice()
-                      .sort((a, b) => Number(b.computedOnline) - Number(a.computedOnline))
                       .map(({ info, computedOnline }) => (
                         <div key={info.terminal_id} className={computedOnline ? "terminalCard" : "terminalCard offline"}>
                           <div className="terminalHeader">
@@ -272,13 +273,14 @@ function App() {
                 <div className="card span2">
                   <div className="row spread">
                     <h2>地图分布</h2>
-                    <div className="muted">仅显示在线且有 GPS 的终端</div>
+                    <div className="muted">仅显示在线且有 GPS 的终端（高德定位坐标可直接展示）</div>
                   </div>
-                  <MapView 
-                    terminals={onlineTerminals.filter((t) => t.gps)} 
+                  {mapTerminals.length > 0 && <MapView 
+                    terminals={mapTerminals} 
                     amapKey={settings.amapKey}
                     amapSecurityCode={settings.amapSecurityCode}
                   />
+                  }
                 </div>
               </>
             )}
