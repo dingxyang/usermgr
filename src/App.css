@@ -29,10 +29,6 @@ body {
   padding-top: 50px;
 }
 
-.tableWrap {
-  margin-top: 8px;
-}
-
 .topbar {
   position: sticky;
   top: 0;
@@ -248,6 +244,7 @@ button:disabled {
   overflow: auto;
   border-radius: 14px;
   border: 1px solid rgba(20, 30, 50, 0.08);
+  margin-top: 8px;
 }
 
 .table {
@@ -392,6 +389,7 @@ button:disabled {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    margin-top: 8px;
   }
 
   .terminalCard {
