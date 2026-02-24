@@ -98,6 +98,25 @@ function isTauri(): boolean {
   return typeof window !== "undefined" && Boolean(window.__TAURI__);
 }
 
+// 测试 Gitee 配置是否可用（读取 gist 验证连通性）
+export async function testGiteeConfig(cfg: Pick<GiteeConfig, "accessToken" | "gistId">): Promise<void> {
+  if (!cfg.accessToken.trim()) throw new Error("缺少 Access Token");
+  if (!cfg.gistId.trim()) throw new Error("缺少 Gist ID");
+
+  if (isTauri()) {
+    await invoke("gitee_get_gist_file", {
+      gist_id: cfg.gistId.trim(),
+      file_name: "app.json",
+      access_token: cfg.accessToken.trim(),
+    });
+    return;
+  }
+
+  const url = `https://gitee.com/api/v5/gists/${encodeURIComponent(cfg.gistId.trim())}?access_token=${encodeURIComponent(cfg.accessToken.trim())}`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Gitee 请求失败 (${resp.status})`);
+}
+
 // 校验 Gitee 配置完整性
 function assertCfg(cfg: GiteeConfig) {
   if (!cfg.gistId.trim()) throw new Error("Missing Gitee Gist ID");

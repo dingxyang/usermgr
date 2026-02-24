@@ -4,6 +4,15 @@ import type { Settings, TerminalStore } from "./types";
 // 本地存储 key（版本化便于后续迁移）
 const TERMINAL_ID_KEY = "usermgr.terminalId.v1";
 const STORE_CACHE_KEY = "usermgr.storeCache.v1";
+const USER_SETTINGS_KEY = "usermgr.userSettings.v1";
+
+// 用户可自定义的设置字段
+export type UserSettings = {
+  giteeAccessToken?: string;
+  giteeGistId?: string;
+  amapKey?: string;
+  amapSecurityCode?: string;
+};
 
 // 默认设置项（可被环境变量覆盖）
 export const defaultSettings: Settings = {
@@ -16,9 +25,10 @@ export const defaultSettings: Settings = {
   amapSecurityCode: "",
 };
 
-// 从环境变量加载设置，并应用范围限制
+// 从环境变量加载设置，用户配置优先于系统内置值
 export function loadSettings(): Settings {
   const env = import.meta.env;
+  const user = loadUserSettings();
   const refreshSeconds = clampNumber(
     env.VITE_REFRESH_SECONDS ? Number(env.VITE_REFRESH_SECONDS) : NaN,
     2,
@@ -31,15 +41,36 @@ export function loadSettings(): Settings {
     60 * 24,
     defaultSettings.onlineTimeoutMinutes,
   );
+  // Gitee: 只有同时配置了 token 和 gist id 才使用用户配置
+  const useUserGitee = !!(user.giteeAccessToken && user.giteeGistId);
+  // 高德: 只有同时配置了 key 和安全码才使用用户配置
+  const useUserAmap = !!(user.amapKey && user.amapSecurityCode);
+
   return {
-    giteeAccessToken: env.VITE_GITEE_ACCESS_TOKEN ?? defaultSettings.giteeAccessToken,
-    giteeGistId: env.VITE_GITEE_GIST_ID ?? defaultSettings.giteeGistId,
+    giteeAccessToken: (useUserGitee ? user.giteeAccessToken : "") || env.VITE_GITEE_ACCESS_TOKEN || defaultSettings.giteeAccessToken,
+    giteeGistId: (useUserGitee ? user.giteeGistId : "") || env.VITE_GITEE_GIST_ID || defaultSettings.giteeGistId,
     gistFileName: env.VITE_GIST_FILE_NAME ?? defaultSettings.gistFileName,
     refreshSeconds,
     onlineTimeoutMinutes,
-    amapKey: env.VITE_AMAP_KEY ?? defaultSettings.amapKey,
-    amapSecurityCode: env.VITE_AMAP_SECURITY_CODE ?? defaultSettings.amapSecurityCode,
+    amapKey: (useUserAmap ? user.amapKey : "") || env.VITE_AMAP_KEY || defaultSettings.amapKey,
+    amapSecurityCode: (useUserAmap ? user.amapSecurityCode : "") || env.VITE_AMAP_SECURITY_CODE || defaultSettings.amapSecurityCode,
   };
+}
+
+// 读取用户自定义设置
+export function loadUserSettings(): UserSettings {
+  try {
+    const raw = localStorage.getItem(USER_SETTINGS_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as UserSettings;
+  } catch {
+    return {};
+  }
+}
+
+// 保存用户自定义设置
+export function saveUserSettings(us: UserSettings) {
+  localStorage.setItem(USER_SETTINGS_KEY, JSON.stringify(us));
 }
 
 // 判断是否在 Tauri 环境

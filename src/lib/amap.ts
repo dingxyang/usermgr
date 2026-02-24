@@ -68,6 +68,20 @@ export function getAmapPosition(timeoutMs: number): Promise<{
   });
 }
 
+// 测试高德地图配置是否可用（通过 JS API 加载 SDK 验证）
+export async function testAmapConfig(cfg: { key: string; securityCode: string }): Promise<void> {
+  if (!cfg.key.trim()) throw new Error("缺少高德地图 Key");
+  if (!cfg.securityCode.trim()) throw new Error("缺少高德地图安全码");
+
+  window._AMapSecurityConfig = { securityJsCode: cfg.securityCode.trim() };
+
+  await AMapLoader.load({
+    key: cfg.key.trim(),
+    version: "2.0",
+    plugins: [],
+  });
+}
+
 // 加载高德 JS SDK（单例）
 function loadAmapSdk() {
   if (window.AMap) return Promise.resolve(window.AMap);

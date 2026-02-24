@@ -1,0 +1,226 @@
+.settingsBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.settingsPage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 18px 16px 28px;
+  padding-top: 48px;
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.settingsHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.settingsHeader h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.settingsBody {
+  background: #ffffff;
+  border: 1px solid rgba(20, 30, 50, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: rgba(11, 18, 32, 0.7);
+}
+
+.clearBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: rgba(11, 18, 32, 0.35);
+  transition: color 0.15s, background 0.15s;
+}
+
+.clearBtn:hover {
+  color: #b42318;
+  background: rgba(180, 35, 24, 0.08);
+}
+
+.sectionDivider {
+  height: 1px;
+  background: rgba(20, 30, 50, 0.08);
+  margin: 16px 0;
+}
+
+.hint {
+  font-size: 12px;
+  color: rgba(11, 18, 32, 0.45);
+  margin-bottom: 8px;
+}
+
+.testRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.testBtn {
+  font-size: 13px;
+  padding: 5px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(20, 30, 50, 0.15);
+  cursor: pointer;
+  background: #f5f6fa;
+  color: #333;
+  transition: background 0.15s;
+}
+
+.testBtn:hover:not(:disabled) {
+  background: #ebedf2;
+}
+
+.testBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Gitee 测试按钮 - 红色调（Gitee 品牌色） */
+.giteeTestBtn {
+  border-color: rgba(199, 44, 52, 0.3);
+  color: #c72c34;
+  background: rgba(199, 44, 52, 0.06);
+}
+
+.giteeTestBtn:hover:not(:disabled) {
+  background: rgba(199, 44, 52, 0.12);
+}
+
+/* 高德地图测试按钮 - 蓝色调（高德品牌色） */
+.amapTestBtn {
+  border-color: rgba(30, 120, 255, 0.3);
+  color: #1e78ff;
+  background: rgba(30, 120, 255, 0.06);
+}
+
+.amapTestBtn:hover:not(:disabled) {
+  background: rgba(30, 120, 255, 0.12);
+}
+
+.testOk {
+  font-size: 13px;
+  color: #15803d;
+  font-weight: 500;
+}
+
+.testErr {
+  font-size: 13px;
+  color: #b42318;
+  font-weight: 500;
+}
+
+@media (prefers-color-scheme: dark) {
+  .settingsBody {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #e6ebff;
+  }
+
+  .backBtn {
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #e6ebff;
+  }
+
+  .clearBtn {
+    color: rgba(230, 235, 255, 0.35);
+  }
+
+  .clearBtn:hover {
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.1);
+  }
+
+  .sectionTitle {
+    color: rgba(230, 235, 255, 0.7);
+  }
+
+  .sectionDivider {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .hint {
+    color: rgba(230, 235, 255, 0.45);
+  }
+
+  .testBtn {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #ccc;
+  }
+
+  .testBtn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .giteeTestBtn {
+    border-color: rgba(230, 90, 95, 0.3);
+    color: #e65a5f;
+    background: rgba(230, 90, 95, 0.08);
+  }
+
+  .giteeTestBtn:hover:not(:disabled) {
+    background: rgba(230, 90, 95, 0.15);
+  }
+
+  .amapTestBtn {
+    border-color: rgba(80, 150, 255, 0.3);
+    color: #5096ff;
+    background: rgba(80, 150, 255, 0.08);
+  }
+
+  .amapTestBtn:hover:not(:disabled) {
+    background: rgba(80, 150, 255, 0.15);
+  }
+
+  .testOk {
+    color: #4ade80;
+  }
+
+  .testErr {
+    color: #f87171;
+  }
+}
