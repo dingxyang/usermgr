@@ -78,7 +78,7 @@ export async function testAmapConfig(cfg: { key: string; securityCode: string })
   await AMapLoader.load({
     key: cfg.key.trim(),
     version: "2.0",
-    plugins: [],
+    plugins: ["AMap.Geolocation"],
   });
 }
 
