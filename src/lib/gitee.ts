@@ -1,33 +1,39 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { TerminalStore } from "./types";
+import { sanitizeStore } from "./storage";
 
+// Gitee gist 访问配置
 export type GiteeConfig = {
   accessToken: string;
   gistId: string;
   fileName: string;
 };
 
+// 返回空的终端存储结构
 export function emptyStore(): TerminalStore {
   return { terminals: {} };
 }
 
+// 从 Gitee gist 拉取终端信息（自动兜底为空）
 export async function fetchStore(cfg: GiteeConfig): Promise<TerminalStore> {
   const content = await getGistFileContent(cfg);
   if (!content) return emptyStore();
   try {
     const parsed = JSON.parse(content) as TerminalStore;
     if (!parsed || typeof parsed !== "object" || typeof parsed.terminals !== "object") return emptyStore();
-    return parsed;
+    return sanitizeStore(parsed);
   } catch {
     return emptyStore();
   }
 }
 
+// 将终端信息保存到 Gitee gist
 export async function saveStore(cfg: GiteeConfig, store: TerminalStore): Promise<void> {
   const content = JSON.stringify(store, null, 2);
   await updateGistFileContent(cfg, content);
 }
 
+// 拉取 gist 指定文件内容（在 Tauri 端走后端接口）
 async function getGistFileContent(cfg: GiteeConfig): Promise<string | null> {
   assertCfg(cfg);
 
@@ -49,6 +55,7 @@ async function getGistFileContent(cfg: GiteeConfig): Promise<string | null> {
   return v.files?.[cfg.fileName]?.content ?? null;
 }
 
+// 更新 gist 文件内容（PATCH 失败回退 PUT）
 async function updateGistFileContent(cfg: GiteeConfig, content: string): Promise<void> {
   assertCfg(cfg);
 
@@ -86,10 +93,12 @@ async function updateGistFileContent(cfg: GiteeConfig, content: string): Promise
   if (!resp.ok) throw new Error(`Gitee update failed (${resp.status})`);
 }
 
+// 判断是否在 Tauri 环境
 function isTauri(): boolean {
   return typeof window !== "undefined" && Boolean(window.__TAURI__);
 }
 
+// 校验 Gitee 配置完整性
 function assertCfg(cfg: GiteeConfig) {
   if (!cfg.gistId.trim()) throw new Error("Missing Gitee Gist ID");
   if (!cfg.fileName.trim()) throw new Error("Missing Gist file name");

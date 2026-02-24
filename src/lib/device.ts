@@ -4,6 +4,7 @@ import { getAmapPosition } from "./amap";
 
 // const PRIMARY_TIMEOUT_MS = 3000;
 
+// 获取当前位置（目前使用高德定位，失败返回 null）
 export async function getCurrentGps(timeoutMs: number): Promise<Gps> {
   try {
     const position = await getAmapPosition(timeoutMs);
@@ -33,6 +34,7 @@ export async function getCurrentGps(timeoutMs: number): Promise<Gps> {
   // }
 }
 
+// 根据 UA 推断平台名称
 export function getPlatformLabel(): string {
   const ua = navigator.userAgent.toLowerCase();
   if (ua.includes("android")) return "Android";
@@ -43,14 +45,15 @@ export function getPlatformLabel(): string {
   return "Unknown";
 }
 
+// 截断过长 UA，作为设备型号描述
 export function getDeviceModelLabel(): string {
   const ua = navigator.userAgent;
   return ua.length > 120 ? `${ua.slice(0, 117)}...` : ua;
 }
 
+// 组装终端上报数据
 export async function buildTerminalInfo(input: {
   terminalId: string;
-  appId: string;
   status: TerminalInfo["status"];
   gps: Gps;
 }): Promise<TerminalInfo> {
@@ -62,8 +65,6 @@ export async function buildTerminalInfo(input: {
 
   return {
     terminal_id: input.terminalId,
-    terminal_name: input.terminalId,
-    app_id: input.appId,
     platform: getPlatformLabel(),
     device_model: getDeviceModelLabel(),
     cpu: cores,
@@ -73,4 +74,3 @@ export async function buildTerminalInfo(input: {
     last_update: new Date().toISOString(),
   };
 }
-

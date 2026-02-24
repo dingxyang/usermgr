@@ -38,8 +38,6 @@
 ```json
 {
   "terminal_id": "唯一ID（UUID / 设备ID）",
-  "terminal_name": "终端名称",
-  "app_id": "APP标识",
   "platform": "Android / iOS / Windows / macOS",
   "device_model": "手机型号",
   "cpu": "CPU信息",

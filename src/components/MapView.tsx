@@ -3,6 +3,7 @@ import AMapLoader from "@amap/amap-jsapi-loader";
 import type { TerminalInfo } from "../lib/types";
 import markerIconUrl from "../assets/map-marker.svg";
 
+// 终端地图展示组件
 type Props = {
   terminals: TerminalInfo[];
   amapKey?: string;
@@ -25,6 +26,7 @@ export default function MapView({ terminals, amapKey, amapSecurityCode }: Props)
   const [mapError, setMapError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 仅保留有效 GPS 的点位
   const points = useMemo(
     () =>
       terminals
@@ -37,7 +39,7 @@ export default function MapView({ terminals, amapKey, amapSecurityCode }: Props)
     [terminals],
   );
 
-  // 初始化地图
+  // 初始化地图（只在 Key/安全码变化时重建）
   useEffect(() => {
     if (!amapKey) {
       setMapError("请在设置中配置高德地图 API Key");
@@ -101,7 +103,7 @@ export default function MapView({ terminals, amapKey, amapSecurityCode }: Props)
     };
   }, [amapKey, amapSecurityCode]);
 
-  // 更新标记点
+  // 更新标记点（终端变更后刷新）
   useEffect(() => {
     if (!mapRef.current || !window.AMap) return;
 
@@ -125,36 +127,9 @@ export default function MapView({ terminals, amapKey, amapSecurityCode }: Props)
     const markers = points.map((p) => {
       const marker = new AMap.Marker({
         position: [p.lng, p.lat],
-        title: p.t.terminal_name,
         icon: markerIcon,
         offset: new AMap.Pixel(-16, -42),
         map: mapRef.current,
-      });
-
-      // 创建信息窗口内容
-      const infoContent = `
-        <div style="padding: 12px; min-width: 240px; font-family: inherit;">
-          <div style="font-weight: 600; font-size: 15px; margin-bottom: 10px; color: #0b1220; border-bottom: 1px solid rgba(20, 30, 50, 0.1); padding-bottom: 8px;">
-            ${escapeHtml(p.t.terminal_name)}
-          </div>
-          <div style="font-size: 13px; line-height: 1.8; color: rgba(11, 18, 32, 0.85);">
-            <div><b>平台：</b>${escapeHtml(p.t.platform)}</div>
-            <div><b>型号：</b>${escapeHtml(p.t.device_model)}</div>
-            <div><b>CPU：</b>${escapeHtml(p.t.cpu)}</div>
-            <div><b>内存：</b>${escapeHtml(p.t.memory)}</div>
-            <div><b>位置：</b>${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}</div>
-            <div><b>更新：</b>${escapeHtml(new Date(p.t.last_update).toLocaleString())}</div>
-          </div>
-        </div>
-      `;
-
-      const infoWindow = new AMap.InfoWindow({
-        content: infoContent,
-        offset: new AMap.Pixel(0, -30),
-      });
-
-      marker.on("click", () => {
-        infoWindow.open(mapRef.current, marker.getPosition());
       });
 
       return marker;
@@ -267,13 +242,4 @@ export default function MapView({ terminals, amapKey, amapSecurityCode }: Props)
       <div ref={containerRef} className="map" />
     </div>
   );
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }

@@ -7,7 +7,7 @@ import { defaultSettings, loadCachedStore, loadOrCreateTerminalId, loadSettings,
 import type { Gps, TerminalInfo, TerminalStatus, TerminalStore } from "./lib/types";
 
 function App() {
-  const terminalId = useMemo(() => loadOrCreateTerminalId(), []);
+  const [terminalId, setTerminalId] = useState<string | null>(null);
   const settings = useMemo(() => loadSettings(), []);
 
   const [store, setStore] = useState<TerminalStore>(() => loadCachedStore() ?? emptyStore());
@@ -19,6 +19,10 @@ function App() {
 
   const refreshInFlight = useRef(false);
   const heartbeatInFlight = useRef(false);
+
+  useEffect(() => {
+    void loadOrCreateTerminalId().then(setTerminalId);
+  }, []);
 
   const giteeCfg = useMemo(
     () => ({
@@ -57,6 +61,15 @@ function App() {
       setStore(s);
       saveCachedStore(s);
       console.log("Pulled store:", s);
+      // 同步当前设备的在线状态到 localStatus
+      if (terminalId) {
+        const me = s.terminals?.[terminalId];
+        if (me) {
+          const timeoutMs = settings.onlineTimeoutMinutes * 60_000;
+          const online = isComputedOnline(me, timeoutMs, Date.now());
+          setLocalStatus(online ? "online" : "offline");
+        }
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to fetch store";
       setStoreError(msg);
@@ -83,10 +96,10 @@ function App() {
   }
 
   async function join() {
+    if (!terminalId) return;
     const gps = await getCurrentGps(8000);
     const info = await buildTerminalInfo({
       terminalId,
-      appId: settings.appId,
       status: "online",
       gps,
     });
@@ -100,6 +113,7 @@ function App() {
   }
 
   async function heartbeat() {
+    if (!terminalId) return;
     if (heartbeatInFlight.current) return;
     heartbeatInFlight.current = true;
     try {
@@ -111,8 +125,6 @@ function App() {
           ? { ...existing, gps, status: "online", last_update: iso }
           : {
               terminal_id: terminalId,
-              terminal_name: terminalId,
-              app_id: settings.appId,
               platform: "Unknown",
               device_model: "Unknown",
               cpu: "unknown",
@@ -131,6 +143,7 @@ function App() {
   }
 
   async function exit() {
+    if (!terminalId) return;
     const iso = new Date().toISOString();
     await withMergedStore((s) => {
       const existing = s.terminals?.[terminalId];
@@ -155,16 +168,13 @@ function App() {
     if (localStatus !== "online") return;
     const t = window.setInterval(() => void heartbeat(), 30000);
     return () => window.clearInterval(t);
-  }, [localStatus, giteeCfg.gistId, giteeCfg.fileName, giteeCfg.accessToken, settings.appId, terminalId]);
+  }, [localStatus, giteeCfg.gistId, giteeCfg.fileName, giteeCfg.accessToken, terminalId]);
 
   return (
     <div className="app">
       <header className="topbar">
         <div className="brand">
           <div className="brandTitle">多终端在线管理</div>
-          {/* <div className="brandMeta">
-            终端：<span className="mono">{terminalId}</span>
-          </div> */}
         </div>
       </header>
 
@@ -178,10 +188,10 @@ function App() {
         <section className="grid">
             <div className="card">
               <div className="row">
-                <button onClick={() => void join()} disabled={storeLoading || !settings.giteeAccessToken || !settings.giteeGistId}>
+                <button onClick={() => void join()} disabled={storeLoading || !terminalId || !settings.giteeAccessToken || !settings.giteeGistId}>
                   加入（Join）
                 </button>
-                <button onClick={() => void exit()} disabled={storeLoading || localStatus !== "online"}>
+                <button onClick={() => void exit()} disabled={storeLoading || (localStatus !== "online" && !store.terminals[terminalId ?? ""])}>
                   退出（Exit）
                 </button>
               </div>
@@ -205,41 +215,7 @@ function App() {
                     </div>
                   </div>
 
-                  {/* 桌面端表格视图 */}
-                  <div className="tableWrap">
-                    <table className="table">
-                      <thead>
-                        <tr>
-                          <th>平台</th>
-                          <th>型号</th>
-                          <th>CPU</th>
-                          <th>内存</th>
-                          <th>GPS</th>
-                          <th>最近更新</th>
-                          <th>状态</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {onlineComputedTerminals
-                          .slice()
-                          .map(({ info, computedOnline }) => (
-                            <tr key={info.terminal_id}>
-                              <td>{info.platform}</td>
-                              <td className="muted">{info.device_model}</td>
-                              <td className="muted">{info.cpu}</td>
-                              <td className="muted">{info.memory}</td>
-                              <td className="muted">{formatGps(info.gps)}</td>
-                              <td className="muted">{safeLocalTime(info.last_update)}</td>
-                              <td>
-                                <span className={computedOnline ? "pill ok" : "pill"}>{computedOnline ? "online" : "offline"}</span>
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* 移动端卡片视图 */}
+                  {/* 卡片视图 */}
                   <div className="mobileCards">
                     {onlineComputedTerminals
                       .slice()
